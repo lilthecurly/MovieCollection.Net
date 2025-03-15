@@ -7,8 +7,9 @@ namespace MovieCollection.Models
         public int Id { get; set; }
 
         [Required(ErrorMessage = "Название категории обязательно")]
-        public string Name { get; set; }
+        [StringLength(100, ErrorMessage = "Максимальная длина названия 100 символов")]
+        public string? Name { get; set; }
 
-        public List<Movie>? Movies { get; set; }
+        public List<Movie> Movies { get; set; } = new();
     }
 }

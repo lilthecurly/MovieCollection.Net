@@ -7,9 +7,24 @@
 <div class="container mt-4">
     <h1 class="mb-4">@ViewData["Title"]</h1>
 
-    <!-- Поиск и добавление -->
+    <!-- Фильтры и добавление -->
     <div class="row mb-4">
-        <div class="col-md-6">
+        <!-- Фильтр по категории -->
+        <div class="col-md-4 mb-3">
+            <form asp-action="Index" method="get">
+                <div class="input-group">
+                    <select name="categoryId" 
+                            class="form-select" 
+                            asp-items="ViewBag.Categories"
+                            onchange="this.form.submit()">
+                        <option value="">Все категории</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+
+        <!-- Поиск -->
+        <div class="col-md-5 mb-3">
             <form asp-action="Index" method="get" class="input-group">
                 <input type="text" 
                        name="searchString" 
@@ -24,8 +39,10 @@
                 </a>
             </form>
         </div>
-        <div class="col-md-6 text-end">
-            <a asp-action="Create" class="btn btn-success">
+
+        <!-- Кнопка добавления -->
+        <div class="col-md-3 text-end mb-3">
+            <a asp-action="Create" class="btn btn-success w-100">
                 <i class="bi bi-plus-circle"></i> Добавить фильм
             </a>
         </div>
@@ -85,7 +102,11 @@
                 {
                             <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
                                 <a class="page-link" 
-                                   href="@Url.Action("Index", new { page = i, searchString = Context.Request.Query["searchString"] })">
+                                   href="@Url.Action("Index", new { 
+                               page = i, 
+                               searchString = Context.Request.Query["searchString"],
+                               categoryId = Context.Request.Query["categoryId"]
+                           })">
                             @i
                                 </a>
                             </li>

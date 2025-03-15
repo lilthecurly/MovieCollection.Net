@@ -14,21 +14,18 @@ namespace MovieCollection.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder); // Обязательно для работы Identity
+            base.OnModelCreating(modelBuilder);
 
-            // Игнорирование навигационного свойства Movies в Category
-            modelBuilder.Entity<Category>().Ignore(c => c.Movies);
-
-            // Настройка точности для поля Price
             modelBuilder.Entity<Movie>()
-                .Property(m => m.Price)
-                .HasPrecision(18, 2); // decimal(18,2) в SQL Server
+                .HasOne(m => m.Category)
+                .WithMany(c => c.Movies)
+                .HasForeignKey(m => m.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // Дополнительные настройки (пример для CartItem)
             modelBuilder.Entity<CartItem>()
-                .HasOne(ci => ci.User)
+                .HasOne(c => c.User)
                 .WithMany()
-                .HasForeignKey(ci => ci.UserId);
+                .HasForeignKey(c => c.UserId);
         }
     }
 }

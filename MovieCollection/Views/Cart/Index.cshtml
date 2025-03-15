@@ -26,7 +26,7 @@ else
                             <td>@item.Quantity</td>
                             <td>
                                 <form asp-action="RemoveFromCart" method="post">
-                                    <input type="hidden" name="id" value="@item.Id" />
+                                    <input type="hidden" name="movieId" value="@item.MovieId" />
                                     <button type="submit" class="btn btn-danger">Удалить</button>
                                 </form>
                             </td>

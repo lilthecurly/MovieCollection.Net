@@ -1,0 +1,65 @@
+﻿@model List<CartItem>
+
+<div class="container mt-4">
+    <h2>Оформление заказа</h2>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Ваши товары</h4>
+                    <table class="table">
+                        @foreach (var item in Model)
+                        {
+                                <tr>
+                                    <td>@item.Movie.Title</td>
+                                    <td>@item.Quantity x @item.Movie.Price.ToString("C")</td>
+                                    <td>@((item.Quantity * item.Movie.Price).ToString("C"))</td>
+                                </tr>
+                        }
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title">Итого</h4>
+                    <h3>@Model.Sum(i => i.Quantity * i.Movie.Price).ToString("C")</h3>
+                    <button id="checkout-button" class="btn btn-success btn-lg w-100">
+                        Оплатить через Stripe
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+        <script src="https://js.stripe.com/v3/"></script>
+        <script>
+            const stripe = Stripe('@ViewBag.StripePublishableKey');
+            document.getElementById('checkout-button').addEventListener('click', async () => {
+                try {
+                    const response = await fetch('/Cart/Checkout', { 
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const session = await response.json();
+                    await stripe.redirectToCheckout({ sessionId: session.id });
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Ошибка при оформлении заказа');
+                }
+            });
+        </script>
+}
