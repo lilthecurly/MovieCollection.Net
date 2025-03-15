@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MovieCollection.Models
 {
@@ -12,11 +13,19 @@ namespace MovieCollection.Models
         [Required(ErrorMessage = "Описание обязательно")]
         public string Description { get; set; }
 
-        [Range(1900, 2050, ErrorMessage = "Год должен быть между 1900 и 2050")]
+        [Required(ErrorMessage = "Год обязателен")]
+        [Range(1900, 2050)]
         public int Year { get; set; }
 
+        [Required(ErrorMessage = "Цена обязательна")]
+        [Range(0.01, 1000)]
+        public decimal Price { get; set; }
+
         [Required(ErrorMessage = "Категория обязательна")]
+        [Display(Name = "Категория")]
         public int CategoryId { get; set; }
+
+        [ForeignKey("CategoryId")]
         public Category Category { get; set; }
     }
 }

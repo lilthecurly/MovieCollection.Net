@@ -22,15 +22,43 @@ namespace MovieCollection.Controllers
         // GET: Movie
         public async Task<IActionResult> Index(string searchString, int page = 1, int pageSize = 10)
         {
-            var movies = _context.Movies.Include(m => m.Category).AsQueryable();
+            // Добавление тестового фильма, если база пуста
+            if (!_context.Movies.Any())
+            {
+                // Проверяем наличие категорий
+                if (!_context.Categories.Any())
+                {
+                    // Создаем тестовую категорию
+                    var testCategory = new Category { Name = "Тестовая категория" };
+                    _context.Categories.Add(testCategory);
+                    await _context.SaveChangesAsync();
+                }
 
-            // Фильтрация по поиску
+                // Создаем тестовый фильм
+                var testMovie = new Movie
+                {
+                    Title = "Тестовый фильм",
+                    Description = "Это тестовое описание",
+                    Year = 2023,
+                    Price = 9.99m,
+                    CategoryId = _context.Categories.First().Id // Берем первую категорию
+                };
+
+                _context.Movies.Add(testMovie);
+                await _context.SaveChangesAsync();
+            }
+
+            // Основная логика метода
+            var movies = _context.Movies
+                .Include(m => m.Category)
+                .OrderBy(m => m.Title)
+                .AsQueryable();
+
             if (!string.IsNullOrEmpty(searchString))
             {
                 movies = movies.Where(m => m.Title.Contains(searchString));
             }
 
-            // Пагинация
             var totalItems = await movies.CountAsync();
             var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
@@ -41,6 +69,7 @@ namespace MovieCollection.Controllers
 
             ViewBag.TotalPages = totalPages;
             ViewBag.CurrentPage = page;
+            ViewBag.SearchString = searchString;
 
             return View(pagedMovies);
         }
@@ -67,6 +96,7 @@ namespace MovieCollection.Controllers
         // GET: Movie/Create
         public IActionResult Create()
         {
+            // Загрузка категорий из базы данных
             ViewBag.CategoryId = new SelectList(_context.Categories, "Id", "Name");
             return View();
         }
@@ -76,16 +106,29 @@ namespace MovieCollection.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,Description,Year,CategoryId")] Movie movie)
+        public async Task<IActionResult> Create(Movie movie)
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(movie);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    _context.Add(movie);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Если есть ошибки валидации, загрузите категории заново
+                ViewBag.CategoryId = new SelectList(_context.Categories, "Id", "Name", movie.CategoryId);
+                return View(movie);
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Id", movie.CategoryId);
-            return View(movie);
+            catch (Exception ex)
+            {
+                // Логирование ошибки
+                Console.WriteLine($"Ошибка: {ex.Message}");
+                ModelState.AddModelError("", "Не удалось сохранить фильм. Проверьте данные.");
+                ViewBag.CategoryId = new SelectList(_context.Categories, "Id", "Name", movie.CategoryId);
+                return View(movie);
+            }
         }
 
         // GET: Movie/Edit/5
@@ -101,7 +144,14 @@ namespace MovieCollection.Controllers
             {
                 return NotFound();
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Id", movie.CategoryId);
+
+            ViewBag.CategoryId = new SelectList(
+                _context.Categories,
+                "Id",
+                "Name",
+                movie.CategoryId
+            );
+
             return View(movie);
         }
 
@@ -110,35 +160,28 @@ namespace MovieCollection.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Title,Description,Year,CategoryId")] Movie movie)
+        public async Task<IActionResult> Edit(int id, Movie movie)
         {
-            if (id != movie.Id)
-            {
-                return NotFound();
-            }
+            if (id != movie.Id) return NotFound();
 
-            if (ModelState.IsValid)
+            try
             {
-                try
+                if (ModelState.IsValid)
                 {
                     _context.Update(movie);
                     await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!MovieExists(movie.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
+                ViewBag.CategoryId = new SelectList(_context.Categories, "Id", "Name", movie.CategoryId);
+                return View(movie);
             }
-            ViewData["CategoryId"] = new SelectList(_context.Categories, "Id", "Id", movie.CategoryId);
-            return View(movie);
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ошибка: {ex.Message}");
+                ModelState.AddModelError("", "Не удалось обновить фильм.");
+                ViewBag.CategoryId = new SelectList(_context.Categories, "Id", "Name", movie.CategoryId);
+                return View(movie);
+            }
         }
 
         // GET: Movie/Delete/5

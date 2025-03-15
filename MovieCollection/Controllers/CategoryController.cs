@@ -22,6 +22,13 @@ namespace MovieCollection.Controllers
         // GET: Category
         public async Task<IActionResult> Index()
         {
+            // Добавление тестовой категории
+            if (!_context.Categories.Any())
+            {
+                _context.Categories.Add(new Category { Name = "Тестовая категория" });
+                await _context.SaveChangesAsync();
+            }
+
             return View(await _context.Categories.ToListAsync());
         }
 
@@ -54,13 +61,21 @@ namespace MovieCollection.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Name")] Category category)
+        public async Task<IActionResult> Create(Category category)
         {
             if (ModelState.IsValid)
             {
-                _context.Add(category);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                try
+                {
+                    _context.Add(category);
+                    await _context.SaveChangesAsync();
+                    Console.WriteLine($"Категория '{category.Name}' добавлена!"); // Логирование
+                    return RedirectToAction(nameof(Index));
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка: {ex.Message}"); // Логирование ошибки
+                }
             }
             return View(category);
         }
